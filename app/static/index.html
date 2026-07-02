@@ -1,1 +1,164 @@
-<h1>placeholder</h1>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLM 技术方案智能生成</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="logo">GLM<br><span>技术方案智能生成</span></div>
+  <nav>
+    <button id="nav-gen" class="nav-btn active" onclick="showView('gen')">方案生成</button>
+    <button id="nav-kb" class="nav-btn" onclick="showView('kb')">知识库管理</button>
+  </nav>
+  <div class="history">
+    <div class="history-title">历史任务</div>
+    <div id="history-list"></div>
+  </div>
+</aside>
+
+<main>
+  <!-- ============ 方案生成 ============ -->
+  <section id="view-gen">
+    <header class="page-head">
+      <h1>技术方案智能生成 <span class="sub">四阶段生成 · 检索增强 · 全程可干预</span></h1>
+      <button class="btn ghost" onclick="openPrompts()">提示词设置</button>
+    </header>
+
+    <div class="stepper" id="stepper">
+      <div class="step" data-step="1"><i>1</i>需求解析</div>
+      <div class="step" data-step="2"><i>2</i>大纲规划</div>
+      <div class="step" data-step="3"><i>3</i>分段生成</div>
+      <div class="step" data-step="4"><i>4</i>整合校验</div>
+    </div>
+
+    <!-- 面板1 需求解析 -->
+    <div class="panel" id="panel-1">
+      <div class="card upload-card" id="p1-upload">
+        <h3>上传招标 / 需求文件</h3>
+        <p class="hint">支持 docx / pdf / txt，上传后 GLM 将深度解析技术参数、工期、资质、评分标准与隐含风险</p>
+        <input type="file" id="p1-file" accept=".docx,.pdf,.txt,.md">
+        <button class="btn primary" id="p1-start" onclick="startParse()">开始解析</button>
+      </div>
+      <div class="split" id="p1-work" style="display:none">
+        <div class="card grow">
+          <h3>AI 解析过程 <span class="live" id="p1-live">●</span></h3>
+          <pre class="stream-log" id="p1-log"></pre>
+        </div>
+        <div class="card grow" id="p1-result-card" style="display:none">
+          <h3>结构化解析结果</h3>
+          <div id="p1-result"></div>
+        </div>
+      </div>
+      <div class="panel-actions"><button class="btn primary" id="p1-next" style="display:none" onclick="startOutline()">下一步：大纲规划 →</button></div>
+    </div>
+
+    <!-- 面板2 大纲规划 -->
+    <div class="panel" id="panel-2" style="display:none">
+      <div class="split">
+        <div class="card grow">
+          <h3>知识库参考（相似历史方案）</h3>
+          <div id="p2-refs" class="refs"></div>
+          <h3 style="margin-top:14px">规划过程 <span class="live" id="p2-live">●</span></h3>
+          <pre class="stream-log sm" id="p2-log"></pre>
+        </div>
+        <div class="card grow">
+          <h3>方案大纲 <span class="hint-inline">可编辑：改标题、增删章节</span></h3>
+          <div id="p2-outline"></div>
+        </div>
+      </div>
+      <div class="panel-actions"><button class="btn primary" id="p2-confirm" style="display:none" onclick="confirmOutline()">确认大纲，开始生成 →</button></div>
+    </div>
+
+    <!-- 面板3 分段生成 -->
+    <div class="panel" id="panel-3" style="display:none">
+      <div class="progress-wrap"><div class="progress-bar" id="p3-progress"></div><span id="p3-progress-text">0 / 0</span></div>
+      <div class="tri">
+        <div class="card nav-col">
+          <h3>大纲导航</h3>
+          <div id="p3-nav"></div>
+        </div>
+        <div class="card grow">
+          <h3 id="p3-current-title">正文</h3>
+          <div class="content-md" id="p3-content"></div>
+        </div>
+        <div class="side-col">
+          <div class="card">
+            <h3>术语表 <span class="hint-inline">全文统一</span></h3>
+            <div id="p3-terms" class="terms"></div>
+          </div>
+          <div class="card">
+            <h3>本节参考</h3>
+            <div id="p3-refs" class="refs sm"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-actions"><button class="btn primary" id="p3-next" style="display:none" onclick="gotoPanel(4)">进入整合校验 →</button></div>
+    </div>
+
+    <!-- 面板4 整合校验 -->
+    <div class="panel" id="panel-4" style="display:none">
+      <div class="card">
+        <div class="row-between">
+          <h3>全局校验</h3>
+          <div>
+            <button class="btn" id="p4-start" onclick="startReview()">开始校验</button>
+            <button class="btn primary" id="p4-export" style="display:none" onclick="exportDocx()">导出 Word</button>
+          </div>
+        </div>
+        <p class="hint">章节完整性 · 参数一致性 · 关键条款缺失 · 格式符合度</p>
+        <div id="p4-summary" class="summary"></div>
+        <div id="p4-issues"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 知识库管理 ============ -->
+  <section id="view-kb" style="display:none">
+    <header class="page-head">
+      <h1>知识库管理 <span class="sub" id="kb-meta"></span></h1>
+    </header>
+    <div class="card upload-card">
+      <h3>上传历史技术方案</h3>
+      <p class="hint">docx / pdf / txt，上传后由智谱知识库自动切片并向量化，供方案生成时检索参考</p>
+      <input type="file" id="kb-file" accept=".docx,.pdf,.txt,.md">
+      <button class="btn primary" id="kb-upload-btn" onclick="kbUpload()">上传到知识库</button>
+    </div>
+    <div class="card">
+      <h3>文档列表</h3>
+      <table class="table" id="kb-table">
+        <thead><tr><th>文档名称</th><th>向量化状态</th><th></th></tr></thead>
+        <tbody id="kb-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<!-- 提示词弹层 -->
+<div class="modal-mask" id="modal-prompts" style="display:none">
+  <div class="modal">
+    <div class="row-between">
+      <h3>阶段提示词 <span class="hint-inline">修改仅作用于当前任务</span></h3>
+      <button class="btn ghost" onclick="closePrompts()">关闭</button>
+    </div>
+    <select id="prompt-name" onchange="loadPromptToEditor()">
+      <option value="parse">阶段1 · 需求解析</option>
+      <option value="outline">阶段2 · 大纲规划</option>
+      <option value="chapter">阶段3 · 章节撰写</option>
+      <option value="terms">阶段3 · 术语提取</option>
+      <option value="review">阶段4 · 全局校验</option>
+    </select>
+    <textarea id="prompt-editor" rows="12"></textarea>
+    <div class="panel-actions">
+      <button class="btn" onclick="resetPrompt()">恢复默认</button>
+      <button class="btn primary" onclick="savePrompt()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
