@@ -33,8 +33,10 @@ def ensure_kb() -> str:
 def upload_doc(filename: str, content: bytes) -> str:
     kb_id = ensure_kb()
     files = {"files": (filename, content)}
+    # knowledge_type=1（文章知识）必须显式传：默认"动态解析"会把 API 上传的文档误判为损坏
     data = _check(_client.post(f"{_BASE}/document/upload_document/{kb_id}",
-                               files=files, headers=_headers()))
+                               files=files, data={"knowledge_type": "1"},
+                               headers=_headers()))
     failed = data["data"].get("failedInfos") or []
     if failed:
         raise RuntimeError(failed[0].get("failReason", "上传失败"))

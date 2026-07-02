@@ -408,7 +408,8 @@ async function refreshKb() {
     const info = await api("/api/kb");
     $("#kb-meta").textContent = `知识库 ID：${info.kb_id} · 共 ${info.docs.length} 份文档`;
     $("#kb-tbody").innerHTML = info.docs.map(d => {
-      const [txt, cls] = STAT[d.embedding_stat] || [`状态${d.embedding_stat}`, "doing"];
+      // 智谱侧 embedding_stat=2 也可能带 failInfo，以 fail 为准
+      const [txt, cls] = d.fail ? ["失败", "fail"] : (STAT[d.embedding_stat] || [`状态${d.embedding_stat}`, "doing"]);
       return `<tr><td>${esc(d.name)}</td>
         <td><span class="badge ${cls}">${txt}</span>${d.fail ? ` <span class="hint-inline">${esc(d.fail)}</span>` : ""}</td>
         <td><button class="btn sm danger" onclick="kbDelete('${d.id}')">删除</button></td></tr>`;

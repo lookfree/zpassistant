@@ -21,6 +21,7 @@ def test_upload_and_retrieve(tmp_path, monkeypatch):
     (tmp_path / "kb.json").write_text('{"kb_id": "kb1"}')
     def handler(req):
         if "upload_document" in req.url.path:
+            assert b'name="knowledge_type"' in req.content and b"1" in req.content
             return httpx.Response(200, json={"code": 200, "data": {
                 "successInfos": [{"documentId": "d1", "fileName": "a.docx"}], "failedInfos": []}})
         if req.url.path.endswith("/retrieve"):

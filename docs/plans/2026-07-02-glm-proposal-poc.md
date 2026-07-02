@@ -1592,7 +1592,12 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-Run: `./deploy.sh smoke` → 预期 `SMOKE OK`（`embedding_stat` 具体取值以实测为准——文档未写明枚举；若成功值不是 2，据实修正 smoke.py 与前端徽章映射，并在本计划此处记录实测值）
+Run: `./deploy.sh smoke` → 预期 `SMOKE OK`
+
+**实测记录（2026-07-02）：**
+- 上传必须显式传 `knowledge_type=1`（文章知识）；不传走"动态解析"会被智谱判为「知识不可用，文档损坏」（embedding_code 10001），docx/txt 均复现
+- `embedding_stat` 显示滞后且不可靠：stat=2 也可能带 failInfo；stat=0/1 时片段可能已可检索。成功判据以「retrieve 有结果」为准，失败判据以 `failInfo.embedding_msg` 为准
+- 前端徽章逻辑已相应调整：有 fail 即显示失败，否则 1=处理中/2=成功
 
 - [ ] **Step 3: 把 3 份历史方案传入知识库（为演示准备数据）**
 
